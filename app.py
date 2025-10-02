@@ -19,6 +19,7 @@ def main():
     - Deve conter as abas **'receitas'** e **'despesas'**
     - Os dados devem começar na **linha 7** (célula C7)
     - Serão lidas apenas as **colunas C até Q**
+    - **Colunas finais:** Data, Tipo, Cliente, Status, Valor
     """)
     
     # Upload do arquivo
@@ -66,27 +67,67 @@ def main():
                     receitas = receitas.dropna(how='all')
                     despesas = despesas.dropna(how='all')
                     
-                    # Remover colunas indesejadas
-                    colunas_para_remover = ['Instruções', 'Unnamed: 1']
-                    for coluna in colunas_para_remover:
-                        if coluna in receitas.columns:
-                            receitas = receitas.drop(columns=[coluna])
-                        if coluna in despesas.columns:
-                            despesas = despesas.drop(columns=[coluna])
+                    # COLUNAS QUE QUEREMOS MANTER
+                    colunas_desejadas = ['Data', 'Tipo', 'Cliente', 'Status', 'Valor']
                     
-                    # Remover colunas Unnamed
-                    receitas = receitas.loc[:, ~receitas.columns.str.contains('^Unnamed')]
-                    despesas = despesas.loc[:, ~despesas.columns.str.contains('^Unnamed')]
+                    # Função para padronizar nomes de colunas
+                    def padronizar_colunas(df):
+                        # Mapeamento de possíveis nomes de colunas
+                        mapeamento_colunas = {
+                            'data': 'Data',
+                            'data ': 'Data',
+                            'data_': 'Data',
+                            'cliente': 'Cliente', 
+                            'cliente ': 'Cliente',
+                            'cliente_': 'Cliente',
+                            'status': 'Status',
+                            'status ': 'Status',
+                            'status_': 'Status',
+                            'valor': 'Valor',
+                            'valor ': 'Valor',
+                            'valor_': 'Valor',
+                            'vlr': 'Valor',
+                            'vlr ': 'Valor',
+                            'vlr_': 'Valor'
+                        }
+                        
+                        # Renomear colunas
+                        df = df.rename(columns=mapeamento_colunas)
+                        
+                        # Manter apenas colunas desejadas (se existirem)
+                        colunas_existentes = [col for col in colunas_desejadas if col in df.columns]
+                        
+                        if colunas_existentes:
+                            df = df[colunas_existentes]
+                        
+                        return df
                     
-                    # Adicionar tipo
+                    # Aplicar padronização
+                    receitas = padronizar_colunas(receitas)
+                    despesas = padronizar_colunas(despesas)
+                    
+                    # Mostrar colunas encontradas
+                    st.write(f"**Colunas nas receitas:** {list(receitas.columns)}")
+                    st.write(f"**Colunas nas despesas:** {list(despesas.columns)}")
+                    
+                    # Adicionar coluna de Tipo
                     receitas['Tipo'] = 'Receita'
                     despesas['Tipo'] = 'Despesa'
                     
                     # Consolidar
                     consolidado = pd.concat([receitas, despesas], ignore_index=True)
                     
-                    # Remover colunas Unnamed do consolidado
-                    consolidado = consolidado.loc[:, ~consolidado.columns.str.contains('^Unnamed')]
+                    # GARANTIR que temos apenas as colunas desejadas
+                    colunas_finais = []
+                    for coluna in colunas_desejadas:
+                        if coluna in consolidado.columns:
+                            colunas_finais.append(coluna)
+                    
+                    consolidado = consolidado[colunas_finais]
+                    
+                    # Ordenar colunas na ordem desejada
+                    ordem_colunas = [col for col in colunas_desejadas if col in consolidado.columns]
+                    consolidado = consolidado[ordem_colunas]
                     
                     # Resultado
                     st.success("✅ Arquivo processado com sucesso!")
@@ -97,17 +138,26 @@ def main():
                     col2.metric("Receitas", len(receitas))
                     col3.metric("Despesas", len(despesas))
                     
+                    # Informações sobre dados
+                    st.write(f"**Colunas mantidas:** {list(consolidado.columns)}")
+                    
                     # Preview
-                    st.subheader("Preview dos Dados")
+                    st.subheader("👀 Preview dos Dados Consolidados")
                     st.dataframe(consolidado.head(10))
                     
+                    # Estatísticas dos valores
+                    if 'Valor' in consolidado.columns:
+                        st.write(f"**💰 Valor total:** R$ {consolidado['Valor'].sum():,.2f}")
+                        st.write(f"**📈 Valor médio:** R$ {consolidado['Valor'].mean():,.2f}")
+                    
                     # Download
-                    csv_data = consolidado.to_csv(index=False)
+                    csv_data = consolidado.to_csv(index=False, sep=',', encoding='utf-8')
                     st.download_button(
                         label="📥 Baixar CSV Consolidado",
                         data=csv_data,
                         file_name=f"consolidado_fluxo_caixa_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-                        mime="text/csv"
+                        mime="text/csv",
+                        type="primary"
                     )
                     
                 except Exception as e:
