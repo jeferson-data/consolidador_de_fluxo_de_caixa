@@ -19,7 +19,7 @@ def main():
     - Deve conter as abas **'receitas'** e **'despesas'**
     - Os dados devem começar na **linha 7** (célula C7)
     - Serão lidas apenas as **colunas C até Q**
-    - **Colunas finais:** Data, Tipo, Cliente, Status, Valor
+    - **Colunas finais:** Data, Categoria, Tipo, Cliente, Status, Valor
     """)
     
     # Upload do arquivo
@@ -67,11 +67,11 @@ def main():
                     receitas = receitas.dropna(how='all')
                     despesas = despesas.dropna(how='all')
                     
-                    # COLUNAS QUE QUEREMOS MANTER
-                    colunas_desejadas = ['Data', 'Tipo', 'Cliente', 'Status', 'Valor']
+                    # COLUNAS QUE QUEREMOS MANTER (agora incluindo Categoria)
+                    colunas_desejadas = ['Data','Categoria', 'Tipo', 'Cliente', 'Status', 'Valor']
                     
                     # Função para padronizar nomes de colunas
-                    def padronizar_colunas(df):
+                    def padronizar_colunas(df, eh_despesa=False):
                         # Mapeamento de possíveis nomes de colunas
                         mapeamento_colunas = {
                             'data': 'Data',
@@ -80,6 +80,9 @@ def main():
                             'cliente': 'Cliente', 
                             'cliente ': 'Cliente',
                             'cliente_': 'Cliente',
+                            'fornecedor': 'Cliente',  # 🔥 FORNECEDOR vira CLIENTE
+                            'fornecedor ': 'Cliente',
+                            'fornecedor_': 'Cliente',
                             'status': 'Status',
                             'status ': 'Status',
                             'status_': 'Status',
@@ -88,23 +91,28 @@ def main():
                             'valor_': 'Valor',
                             'vlr': 'Valor',
                             'vlr ': 'Valor',
-                            'vlr_': 'Valor'
+                            'vlr_': 'Valor',
+                            'categoria': 'Categoria',
+                            'categoria ': 'Categoria',
+                            'categoria_': 'Categoria',
+                            'cat': 'Categoria',
+                            'cat ': 'Categoria',
+                            'cat_': 'Categoria'
                         }
                         
                         # Renomear colunas
                         df = df.rename(columns=mapeamento_colunas)
                         
-                        # Manter apenas colunas desejadas (se existirem)
-                        colunas_existentes = [col for col in colunas_desejadas if col in df.columns]
-                        
-                        if colunas_existentes:
-                            df = df[colunas_existentes]
+                        # Se for despesa e tiver coluna 'Fornecedor', renomear para 'Cliente'
+                        if eh_despesa and 'Fornecedor' in df.columns:
+                            df = df.rename(columns={'Fornecedor': 'Cliente'})
+                            st.write("✅ Coluna 'Fornecedor' renomeada para 'Cliente' nas despesas")
                         
                         return df
                     
-                    # Aplicar padronização
-                    receitas = padronizar_colunas(receitas)
-                    despesas = padronizar_colunas(despesas)
+                    # Aplicar padronização (agora passando info se é despesa)
+                    receitas = padronizar_colunas(receitas, eh_despesa=False)
+                    despesas = padronizar_colunas(despesas, eh_despesa=True)
                     
                     # Mostrar colunas encontradas
                     st.write(f"**Colunas nas receitas:** {list(receitas.columns)}")
@@ -139,7 +147,7 @@ def main():
                     col3.metric("Despesas", len(despesas))
                     
                     # Informações sobre dados
-                    st.write(f"**Colunas mantidas:** {list(consolidado.columns)}")
+                    st.write(f"**🎯 Colunas mantidas:** {list(consolidado.columns)}")
                     
                     # Preview
                     st.subheader("👀 Preview dos Dados Consolidados")
@@ -147,8 +155,17 @@ def main():
                     
                     # Estatísticas dos valores
                     if 'Valor' in consolidado.columns:
-                        st.write(f"**💰 Valor total:** R$ {consolidado['Valor'].sum():,.2f}")
-                        st.write(f"**📈 Valor médio:** R$ {consolidado['Valor'].mean():,.2f}")
+                        total_receitas = consolidado[consolidado['Tipo'] == 'Receita']['Valor'].sum()
+                        total_despesas = consolidado[consolidado['Tipo'] == 'Despesa']['Valor'].sum()
+                        saldo = total_receitas - total_despesas
+                        
+                        st.subheader("📊 Resumo Financeiro")
+                        col1, col2, col3 = st.columns(3)
+                        col1.metric("💰 Total Receitas", f"R$ {total_receitas:,.2f}")
+                        col2.metric("💸 Total Despesas", f"R$ {total_despesas:,.2f}")
+                        col3.metric("⚖️ Saldo", f"R$ {saldo:,.2f}", 
+                                  delta=f"R$ {saldo:,.2f}", 
+                                  delta_color="normal" if saldo >= 0 else "inverse")
                     
                     # Download
                     csv_data = consolidado.to_csv(index=False, sep=',', encoding='utf-8')
@@ -160,14 +177,18 @@ def main():
                         type="primary"
                     )
                     
+                    # Botão para novo processamento
+                    if st.button("🔄 Processar Outro Arquivo"):
+                        st.experimental_rerun()
+                    
                 except Exception as e:
                     st.error(f"❌ Erro ao processar o arquivo: {str(e)}")
+                    st.info("💡 **Dica:** Verifique se os nomes das colunas estão corretos nas abas.")
     
     else:
         st.info("👆 Faça upload de um arquivo Excel para começar")
 
 if __name__ == "__main__":
-    main()
 # Rodapé
 st.markdown("---")
 st.markdown("**Desenvolvido para automatizar o fluxo de caixa** • 📧 Suporte: 51-98147-9517 [jefe.gomes@outlook.com]")
