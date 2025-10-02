@@ -67,8 +67,8 @@ def main():
                     receitas = receitas.dropna(how='all')
                     despesas = despesas.dropna(how='all')
                     
-                    # COLUNAS QUE QUEREMOS MANTER (agora incluindo Categoria)
-                    colunas_desejadas = ['Data','Categoria', 'Tipo', 'Cliente', 'Status', 'Valor']
+                    # COLUNAS QUE QUEREMOS MANTER - ORDEM CORRIGIDA
+                    colunas_desejadas = ['Data', 'Categoria', 'Tipo', 'Cliente', 'Status', 'Valor']
                     
                     # Função para padronizar nomes de colunas
                     def padronizar_colunas(df, eh_despesa=False):
@@ -133,8 +133,12 @@ def main():
                     
                     consolidado = consolidado[colunas_finais]
                     
-                    # Ordenar colunas na ordem desejada
-                    ordem_colunas = [col for col in colunas_desejadas if col in consolidado.columns]
+                    # ORDENAR COLUNAS NA ORDEM ESPECÍFICA: Data, Categoria, Tipo, Cliente, Status, Valor
+                    ordem_colunas = []
+                    for coluna in colunas_desejadas:
+                        if coluna in consolidado.columns:
+                            ordem_colunas.append(coluna)
+                    
                     consolidado = consolidado[ordem_colunas]
                     
                     # Resultado
@@ -147,7 +151,7 @@ def main():
                     col3.metric("Despesas", len(despesas))
                     
                     # Informações sobre dados
-                    st.write(f"**🎯 Colunas mantidas:** {list(consolidado.columns)}")
+                    st.write(f"**🎯 Colunas mantidas (na ordem correta):** {list(consolidado.columns)}")
                     
                     # Preview
                     st.subheader("👀 Preview dos Dados Consolidados")
@@ -189,6 +193,7 @@ def main():
         st.info("👆 Faça upload de um arquivo Excel para começar")
 
 if __name__ == "__main__":
-# Rodapé
-st.markdown("---")
-st.markdown("**Desenvolvido para automatizar o fluxo de caixa** • 📧 Suporte: 51-98147-9517 [jefe.gomes@outlook.com]")
+    main()
+    # Rodapé
+    st.markdown("---")
+    st.markdown("**Desenvolvido para automatizar o fluxo de caixa** • 📧 Suporte: 51-98147-9517 [jefe.gomes@outlook.com]")
