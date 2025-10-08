@@ -21,3 +21,13 @@ Thumbs.db
 *.xls
 *.xlsm
 *.csv
+
+# Logs
+logs/
+*.log
+
+# Arquivos temporários
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
