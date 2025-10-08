@@ -1,10 +1,6 @@
 💰 Consolidador de Fluxo de Caixa
 
 
-https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white
-https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white
-https://img.shields.io/badge/Pandas-2C2D72?style=for-the-badge&logo=pandas&logoColor=white
-
 Sistema automatizado para consolidar e analisar dados de fluxo de caixa a partir de planilhas Excel, com interface web intuitiva e recursos avançados de logging.
 
 ✨ Funcionalidades Principais
